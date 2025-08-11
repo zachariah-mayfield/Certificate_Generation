@@ -1,0 +1,37 @@
+# ~/GitHub/Main/Certificate_Generation/Ansible/roles/generate_root_ca/defaults/main.yml
+
+# Output directory for Certificates
+Out_Directory: "{{ lookup('env','HOME') }}/GitHub/Main/Certificate_Generation/Generated_Certificates" 
+
+# OpenSSL config file
+Cert_Config_File: "{{ Out_Directory }}/cert_config.conf"
+
+# CA config
+CA_Name: "rootCA"
+CA_CRT_File: "{{ Out_Directory }}/{{ CA_Name }}.crt"
+CA_KEY_File: "{{ Out_Directory }}/{{ CA_Name }}.key"
+CA_CommonName: "rootCA"
+CA_Organization: "Zachariah Inc"
+CA_OrganizationalUnit: "Vault"
+
+# Server config
+Server_Name: "vault-server"
+Server_CommonName: "vault_server"
+Server_Organization: "Zachariah Inc"
+Server_OrganizationalUnit: "Vault"
+Server_CRT_File: "{{ Out_Directory }}/{{ Server_Name }}.crt"
+Server_KEY_File: "{{ Out_Directory }}/{{ Server_Name }}.key"
+Server_CSR_File: "{{ Out_Directory }}/{{ Server_Name }}.csr"
+
+# Client config
+Client_Name: "vault-client"
+Client_CommonName: "vault-client"
+Client_Organization: "Zachariah Inc"
+Client_OrganizationalUnit: "Vault"
+Client_CRT_File: "{{ Out_Directory }}/{{ Client_Name }}.crt"
+Client_KEY_File: "{{ Out_Directory }}/{{ Client_Name }}.key"
+Client_CSR_File: "{{ Out_Directory }}/{{ Client_Name }}.csr"
+Client_PFX_File: "{{ Out_Directory }}/{{ Client_Name }}.pfx"
+Client_PEM_File: "{{ Out_Directory }}/{{ Client_Name }}.pem"
+
+

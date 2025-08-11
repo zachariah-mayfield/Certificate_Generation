@@ -1,0 +1,8 @@
+---
+- name: PlayBook - generate root_ca and server and client_certs
+  hosts: localhost
+  become: false
+  #become_method: sudo
+  gather_facts: true
+  roles:
+    - generate_root_ca_and_server_and_client_certs

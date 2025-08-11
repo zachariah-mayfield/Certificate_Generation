@@ -1,0 +1,125 @@
+# ~/GitHub/Main/Certificate_Generation/Ansible/roles/generate_root_ca_and_server_and_client_certs/tasks/main.yml
+---
+- name: Ensure output directory exists and has the correct permissions.
+  file:
+    path: "{{ Out_Directory }}"
+    state: directory
+    mode: '0755'
+
+- name: Generate Root CA private key (if not exists)
+  command: openssl genrsa -out "{{ CA_KEY_File }}" 4096
+  args:
+    creates: "{{ CA_KEY_File }}" # Use the creates: argument in each command task so they won’t rerun if the file already exists.
+
+- name: Generate Root CA certificate (if not exists)
+  ansible.builtin.shell: |
+    openssl req -x509 -new -nodes \
+      -key "{{ CA_KEY_File }}" \
+      -sha256 \
+      -days 3650 \
+      -out "{{ CA_CRT_File }}" \
+      -subj "/C=US/ST=Florida/L=Gulf_Breeze/O=Zachariah Inc/OU=Vault/CN=rootCA"
+  args:
+    creates: "{{ CA_CRT_File }}"
+
+- name: Create OpenSSL config file
+  ansible.builtin.copy:
+    dest: "{{ Cert_Config_File }}"
+    content: |
+      [ req ]
+      default_bits       = 4096
+      prompt             = no
+      default_md         = sha256
+      req_extensions     = req_ext
+      distinguished_name = dn
+
+      [ dn ]
+      C  = US
+      ST = Florida
+      L  = Gulf_Breeze
+      O  = Zachariah Inc
+      OU = Vault
+      CN = vault_server
+
+      [ req_ext ]
+      subjectAltName = @alt_names
+
+      [alt_names]
+      IP.1 = 127.0.0.1
+      DNS.1 = localhost
+      DNS.2 = vault_server
+      DNS.3 = vault-server
+    mode: '0644'
+
+- name: Generate server private key (if not exists)
+  command: openssl genrsa -out "{{ Server_KEY_File }}" 4096
+  args:
+    creates: "{{ Server_KEY_File }}"
+
+- name: Generate server CSR (if not exists)
+  command: >
+    openssl req -new
+    -key "{{ Server_KEY_File }}"
+    -out "{{ Server_CSR_File }}"
+    -subj "/C=US/ST=Florida/L=Gulf_Breeze/O=Zachariah Inc/OU=Vault/CN={{ Server_CommonName }}"
+    -reqexts req_ext
+    -config "{{ Cert_Config_File }}"
+  args:
+    creates: "{{ Server_CSR_File }}"
+
+- name: Sign server CSR with CA to create server certificate (if not exists)
+  command: >
+    openssl x509 -req
+    -in "{{ Server_CSR_File }}"
+    -CA "{{ CA_CRT_File }}"
+    -CAkey "{{ CA_KEY_File }}"
+    -CAcreateserial
+    -out "{{ Server_CRT_File }}"
+    -days 825
+    -sha256
+    -extfile "{{ Cert_Config_File }}"
+    -extensions req_ext
+  args:
+    creates: "{{ Server_CRT_File }}"
+
+- name: Generate client private key (if not exists)
+  command: openssl genrsa -out "{{ Client_KEY_File }}" 4096
+  args:
+    creates: "{{ Client_KEY_File }}"
+
+- name: Generate client CSR (if not exists)
+  command: >
+    openssl req -new
+    -key "{{ Client_KEY_File }}"
+    -out "{{ Client_CSR_File }}"
+    -config "{{ Cert_Config_File }}"
+  args:
+    creates: "{{ Client_CSR_File }}"
+
+- name: Sign client CSR with CA to create client certificate (if not exists)
+  command: >
+    openssl x509 -req
+    -in "{{ Client_CSR_File }}"
+    -CA "{{ CA_CRT_File }}"
+    -CAkey "{{ CA_KEY_File }}"
+    -CAcreateserial
+    -out "{{ Client_CRT_File }}"
+    -days 825
+    -sha256
+    -extfile "{{ Cert_Config_File }}"
+    -extensions req_ext
+  args:
+    creates: "{{ Client_CRT_File }}"
+
+
+- name: Export client certificate and key to PKCS#12 (.pfx) file (if not exists)
+  command: >
+    openssl pkcs12 -export
+    -out "{{ Client_PFX_File }}"
+    -inkey "{{ Client_KEY_File }}"
+    -in "{{ Client_CRT_File }}"
+    -certfile "{{ CA_CRT_File }}"
+    -name "Vault Client Cert"
+    -passout pass:
+  args:
+    creates: "{{ Client_PFX_File }}"
