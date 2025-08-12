@@ -1,5 +1,5 @@
 ---
-- name: PlayBook - generate root_ca and server and client_certs
+- name: PlayBook - generate root_ca and server and client certs
   hosts: localhost
   become: false
   #become_method: sudo

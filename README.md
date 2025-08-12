@@ -8,6 +8,16 @@ a **Vault server certificate**, and a **Vault client certificate** — all signe
 
 It replicates the functionality of an OpenSSL bash script, but is implemented entirely in Ansible.
 
+# The role will:
+- Ensure the output directory exists
+- Generate a Root CA key (4096-bit RSA)
+- Generate a Root CA certificate
+- Create an OpenSSL config file with SAN entries for vault_server
+- Generate server key, CSR, and signed certificate
+- Generate client key, CSR, and signed certificate
+- Export the client certificate in PKCS#12 (.pfx) format
+- All commands use the creates: argument so they run only if the file does not already exist.
+
 ---
 
 ## Generated Files
